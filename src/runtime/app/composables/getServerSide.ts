@@ -2,6 +2,8 @@ import { useNuxtApp, useRuntimeConfig } from 'nuxt/app'
 
 
 export async function getServerSide<T>(fn: () => T | Promise<T>, key?: string): Promise<T | undefined> {
+  if (!key) throw new Error('[getServerSide] missing key — make sure keyedComposables is configured in the module')
+
   const { public: { debug } } = useRuntimeConfig()
   const app = useNuxtApp()
 

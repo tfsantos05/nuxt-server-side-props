@@ -1,5 +1,6 @@
 import { useNuxtApp, useRuntimeConfig } from "nuxt/app";
 export async function getServerSide(fn, key) {
+  if (!key) throw new Error("[getServerSide] missing key \u2014 make sure keyedComposables is configured in the module");
   const { public: { debug } } = useRuntimeConfig();
   const app = useNuxtApp();
   debug && console.log(`[getServerSide:${key}] called on`, import.meta.server ? "SERVER" : "CLIENT");
