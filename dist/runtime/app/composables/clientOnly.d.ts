@@ -1,1 +1,1 @@
-export declare function clientOnly<T>(fn: () => Promise<T>): Promise<T | undefined>;
+export declare function clientOnly<T>(fn: () => T | Promise<T>): Promise<T | undefined>;

@@ -1,4 +1,4 @@
-export async function clientOnly<T>(fn:() => Promise<T>) {
+export async function clientOnly<T>(fn: () => T | Promise<T>): Promise<T | undefined> {
 
     // client only
     if (import.meta.client)
