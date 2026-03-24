@@ -2,7 +2,7 @@
   "name": "nuxt-server-side-props",
   "version": "1.0.0",
   "description": "Nuxt composables to run code exclusively on server or client with automatic payload hydration",
-  "repository": "github:your-github-username/nuxt-server-side-props",
+  "repository": "github:tfsantos05/nuxt-server-side-props",
   "license": "MIT",
   "type": "module",
   "exports": {
