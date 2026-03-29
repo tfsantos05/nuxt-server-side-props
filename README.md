@@ -1,13 +1,9 @@
 # Nuxt Server Side Props
 
-[![npm version][npm-version-src]][npm-version-href]
-[![npm downloads][npm-downloads-src]][npm-downloads-href]
 [![License][license-src]][license-href]
 [![Nuxt][nuxt-src]][nuxt-href]
 
 A Nuxt module that provides composables to run code exclusively on the server or client, with automatic payload hydration.
-
-- [✨ &nbsp;Release Notes](/CHANGELOG.md)
 
 ## Features
 
@@ -36,6 +32,19 @@ export default defineNuxtConfig({
 
 That's it! All composables are auto-imported. ✨
 
+## When to Use Each
+
+| Composable | Server | Client | Events | SSR Only |
+|-----------|--------|--------|--------|----------|
+| `getServerSide` | ✅ Runs | ✅ Gets result | ❌ No | ✅ Yes |
+| `serverOnly` | ✅ Runs | ❌ Undefined | ❌ No | ✅ Yes |
+| `clientOnly` | ❌ Undefined | ✅ Runs | ✅ Yes | ❌ No |
+
+**Summary:**
+- **Only onLoad / top-level:** `getServerSide`, `serverOnly` (SSR)
+- **Event-ready:** `clientOnly` (browser)
+
+
 ## Usage
 
 ### `getServerSide(fn)`
@@ -55,6 +64,46 @@ const user = await getServerSide(async () => {
 
 <template>
   <div>{{ user }}</div>
+</template>
+```
+
+- ‼️ <code>getServerSide()</code> should only be used **on load / top-level** cause it runs during **SSR**
+- ❌ **NEVER USE** on **client-side events** like *@click* (it simply won't work)
+- ⚠️ **Careful** when wrapping on functions! If calling more than once, **use manual and different keys each time**.
+
+
+```vue
+<script setup lang="ts">
+function getSomething() {
+  return await getServerSide(() => { return server_logic(); });
+}
+function manualGetSomething(key) {
+  return await getServerSide(() => { return server_logic(); }, key);
+}
+
+getSomething(); // running it top-level works ✅
+
+// ⚠️ CAREFUL !!!
+// if calling more than once, use different keys !!
+// (if you don't, each call will overwrite the previous).
+
+getSomething(); // Nuxt Auto-Injects a key on the function call.
+getSomething(); // ❌ The same auto key will be used. 💥 THIS WILL CAUSE OVERWRITE !
+
+// if calling more than once, do this instead ✅
+// (use manual keys) 
+
+manualGetSomething("key1");
+manualGetSomething("key2");
+
+</script>
+
+<template>
+  {{ /* This will not work. 🚫 */ }}
+  <button @click="submit()">Send</button>
+
+  {{ /* This will work since it's called on load ✅ */}}
+  <span>{{ getSomething() }}</span>
 </template>
 ```
 
@@ -113,6 +162,8 @@ const user = await getServerSide(async () => {
 </script>
 ```
 
+<br>
+
 The client receives only the returned value — `#server` imports are never bundled into the client.
 
 ### `serverOnly(fn)`
@@ -132,6 +183,28 @@ await serverOnly(async () => {
 
 > Returns `undefined` on the client — don't rely on the return value in client-side code.
 
+- ❌ Like <code>getServerSide()</code>, <code>serverSide()</code> can only be called **top-level / on load**, cause it also runs during **SSR**.
+- 💧 There is no hydration. No need to inject keys at all.
+
+```vue
+<script setup lang="ts">
+
+function serverLogging() {
+  return await serverOnly(() => { return runSomething(); });
+}
+
+const s = serverLogging(); // You can call this top-level ✅
+// 's' will have value during SSR. ✅
+// but will be "undefined" for the client. ❌
+// so 's' is safe to use 👍🏼
+
+</script>
+<template>
+{{ /* Again, this won't work 🚫 */ }}
+<button @click="serverLogging()"></button>
+</template>
+```
+
 ### `clientOnly(fn)`
 
 Runs `fn` on the client only. Server does nothing and returns `undefined` during SSR.
@@ -148,6 +221,27 @@ const analytics = await clientOnly(async () => {
 ```
 
 > Returns `undefined` on the server — guard against it if you use the value during SSR.
+
+> Run it anywhere you want. Top-level, client-side events (like @click), functions.
+```vue
+<script setup lang="ts">
+  function getBody() {
+    return clientOnly(() => { return document.body.getHTML(); }); // safe to run bnowser API
+  }
+
+  getBody(); // this works ✅
+
+</script>
+
+<template>
+{{ /* This works too ✅ */ }}
+<button @click="getBody()"></button>
+
+{{ /* This also works ✅ */ }}
+<span> {{ getBody() }}</span>
+</template>
+
+```
 
 ## Debug Logging
 
